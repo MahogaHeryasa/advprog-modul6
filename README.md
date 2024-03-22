@@ -14,4 +14,58 @@ Pada method `handle_connection`, ditambahkan suatu fungsionalitas yang dapat men
 
 #### Hasil *screenshot*
 
-![Commit 2 screen capture](assets/images/commit2.jpg)
+![Commit 2 screen capture](assets/images/commit2.png)
+
+###  Commit 3 Reflection notes
+
+Pada tahap ini terdapat beberapa perubahan pada method `handle_connection` untuk memvalidasi request dan *response* HTTP yang bersangkutan. Pertama, request HTTP yang awal mulanya disimpan semua dengan `vector` pada variabel `http_request`, dirubah menjadi `let request_line = buf_reader.lines().next().unwrap().unwrap();` yang berfungsi untuk membaca baris pertama dari request HTTP. Method `.next()` mengambil *item* pertama dari iterator yang dihasilkan method `.lines()` yaitu path yang di request oleh klien, kemudian `.unwrap()` pertama digunakan untuk menangani `Option` ketika tidak ada *items* pada iterator, lalu `.unwrap()` kedua digunakan untuk merubah `Result` menjadi String. Untuk memvalidasi path yang direquest oleh klien, dibuat dua percabangan yang menangani hal tersebut. `if request_line == "GET / HTTP/1.1"` digunakan untuk menangani *request path* yang valid dan akan menjalankan fungsionalitas yang telah dibuat pada *milestone 2*. `else` digunakan untuk menangi *request path* selain `GET / HTTP/1.1` yang tidak valid dan akan memberikan *response* HTTP dengan status `HTTP/1.1 404 NOT FOUND` dan mengembalikan template html `404.html`. 
+
+Terdapat refactoring yang dilakukan pada tahap ini, bagian kode validasi request yang awal mulanya seperti berikut,
+
+```rust
+...
+    if request_line == "GET / HTTP/1.1" {
+        let status_line = "HTTP/1.1 200 OK"; 
+        let contents = fs::read_to_string("hello.html").unwrap(); 
+        let length = contents.len();
+        
+        let response =
+            format!("{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}");
+        
+        stream.write_all(response.as_bytes()).unwrap(); 
+    } else {
+        let status_line = "HTTP/1.1 404 NOT FOUND";
+        let contents = fs::read_to_string("404.html").unwrap();
+        let length = contents.len();
+
+        let response = format!(
+            "{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}"
+        );
+
+        stream.write_all(response.as_bytes()).unwrap();
+    }    
+...
+```
+Dirubah menjadi seperti berikut,
+
+```rust
+    let (status_line, filename) = if request_line == "GET / HTTP/1.1" {
+        ("HTTP/1.1 200 OK", "hello.html")
+    } else {
+        ("HTTP/1.1 404 NOT FOUND", "404.html")
+    };
+
+    let contents = fs::read_to_string(filename).unwrap();
+    let length = contents.len();
+
+    let response =
+        format!("{status_line}\r\nContent-Length: {length}\r\n\r\n{contents}");
+
+    stream.write_all(response.as_bytes()).unwrap();
+```
+
+Refactoring ini dilakukan untuk menghilangkan kode yang terduplikasi pada blok `if` dan `else`. Selain itu, kode menjadi lebih ringkas dan pembeda antara *request path* yang valid dan yang tidak valid menjadi lebih jelas, yaitu status *respone* HTTP dan file HTML yang digunakan. 
+
+#### Hasil *screenshot*
+
+![Commit 3 screen capture](assets/images/commit3.png)
