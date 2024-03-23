@@ -3,6 +3,8 @@
 use std::{
     sync::{mpsc, Arc, Mutex},
     thread,
+    error::Error,
+    fmt,
 };
 
 pub struct ThreadPool {
@@ -20,20 +22,20 @@ impl ThreadPool {
     /// # Panics
     ///
     /// The `new` function will panic if the size is zero.
-    pub fn new(size: usize) -> ThreadPool {
-        assert!(size > 0);
+    pub fn build(size: usize) -> Result<ThreadPool, PoolCreationError> {
+        if size == 0 {
+            return Err(PoolCreationError::InvalidSize);
+        }
 
         let (sender, receiver) = mpsc::channel();
-
         let receiver = Arc::new(Mutex::new(receiver));
-
         let mut workers = Vec::with_capacity(size);
 
         for id in 0..size {
             workers.push(Worker::new(id, Arc::clone(&receiver)));
         }
 
-        ThreadPool { workers, sender }
+        Ok(ThreadPool { workers, sender })
     }
 
     pub fn execute<F>(&self, f: F)
@@ -64,3 +66,18 @@ impl Worker {
         Worker { id, thread }
     }
 }
+
+#[derive(Debug)]
+pub enum PoolCreationError {
+    InvalidSize,
+}
+
+impl fmt::Display for PoolCreationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PoolCreationError::InvalidSize => write!(f, "Invalid pool size: size must be greater than zero."),
+        }
+    }
+}
+
+impl Error for PoolCreationError {}
