@@ -69,3 +69,9 @@ Refactoring ini dilakukan untuk menghilangkan kode yang terduplikasi pada blok `
 #### Hasil *screenshot*
 
 ![Commit 3 screen capture](assets/images/commit3.png)
+
+###  Commit 4 Reflection notes
+
+Pada tahap ini, untuk mensimulasikan *request* lambat pada server yang sampai tahap ini *single threaded*, dibuatkan opsi *path request* baru `GET /sleep HTTP/1.1` pada percabangan `request_line`. Untuk menangani tiga percabangan, implementasi blok `if else` dirubah menjadi `match` dengan pencocokan `request_line`. Baris `thread::sleep(Duration::from_secs(5));` berfungsi untuk menghentikan eksekusi thread saat ini selama 5 detik, sehingga respons akan terlambat selama 5 detik, dan setelah itu klien akan mendapatkan status *request* serta keluaran HTML yang sama dengan *response* dari *request path* yang valid.
+
+Pada *single threaded* server, ketika terjadi respons lambat seperti yang disimulasikan pada tahap ini, Jika terdapat banyak klien yang melakukan *request* pada saat yang sama, maka server akan menerima setiap *request* secara bergantian, sehingga klien yang membuat *request* baru harus menunggu giliran mereka sampai server selesai menangani *request* dari klien-klien sebelumnya. Hal ini dapat Hal ini dapat menyebabkan peningkatan waktu respon secara signifikan, dan bahkan bisa menyebabkan antrian *request*.
